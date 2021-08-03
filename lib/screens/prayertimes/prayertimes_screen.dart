@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:imeaapp/model/prayertime.dart';
 import 'package:imeaapp/services/prayertime_database.dart';
 import 'package:imeaapp/services/rest_api.dart';
+import 'package:intl/intl.dart';
 
 class PrayerTimesScreen extends StatefulWidget {
   @override
@@ -9,7 +11,7 @@ class PrayerTimesScreen extends StatefulWidget {
 }
 
 class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
-  List<PrayerTime> prayerTimeListFromDB = [];
+  List<PrayerTime> prayerTimeRenderList = [];
 
   @override
   void initState() {
@@ -19,49 +21,10 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     _readAllPrayerTime();
   }
 
-  _getPrayerTimes() async {
-    String url = "/prayertimes/get_all";
-
-    List<dynamic> responseJson = await getData(url);
-    List<PrayerTime> newPrayerTimeList = [];
-
-    responseJson.forEach((element) {
-      PrayerTime newPrayerTime = PrayerTime(
-        null,
-        DateTime.parse(element['date']),
-        DateTime.parse(element['subuh']),
-        DateTime.parse(element['terbit']),
-        DateTime.parse(element['dhuhur']),
-        DateTime.parse(element['ashar']),
-        DateTime.parse(element['maghrib']),
-        DateTime.parse(element['isha']),
-      );
-
-      PrayerTimeDatabase.instance.create(newPrayerTime);
-    });
-
-    // responseJson.forEach((element) {
-    //   newPrayerTimeList.add(PrayerTime(
-    //       1,
-    //       DateTime.parse(element['date']),
-    //       DateTime.parse(element['subuh']),
-    //       DateTime.parse(element['terbit']),
-    //       DateTime.parse(element['dhuhur']),
-    //       DateTime.parse(element['ashar']),
-    //       DateTime.parse(element['maghrib']),
-    //       DateTime.parse(element['isha'])));
-    // });
-
-    print(newPrayerTimeList[1].subuh);
-
-    // setState(() {
-    //   prayerTimeList = newPrayerTimeList;
-    // });
-  }
-
   _readAllPrayerTime() async {
     //get prayer times from rest api
     String url = "/prayertimes/get_all";
+    List<PrayerTime> prayerTimeTempList = [];
     List<dynamic> responseJson = await getData(url);
 
     //get prayer times from sqflite
@@ -90,6 +53,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         updatePrayerTime.isha = DateTime.parse(response['isha']);
 
         PrayerTimeDatabase.instance.update(updatePrayerTime);
+
+        prayerTimeTempList.add(updatePrayerTime);
       } else {
         //otherwise insert new one
         PrayerTime newPrayerTime = PrayerTime(
@@ -102,25 +67,107 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
           DateTime.parse(response['maghrib']),
           DateTime.parse(response['isha']),
         );
-
         PrayerTimeDatabase.instance.create(newPrayerTime);
+        prayerTimeTempList.add(newPrayerTime);
       }
     });
+
+    // setState for render
+    setState(() {
+      prayerTimeRenderList = [...prayerTimeTempList];
+    });
+  }
+
+  _renderPrayerTimeCard() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Column(
+        children: [
+          _renderPrayerTimeRow('Subuh'),
+          _renderDivider(),
+          _renderPrayerTimeRow('Terbit'),
+          _renderDivider(),
+          _renderPrayerTimeRow('Dhuhur'),
+          _renderDivider(),
+          _renderPrayerTimeRow('Ashar'),
+          _renderDivider(),
+          _renderPrayerTimeRow('Maghrib'),
+          _renderDivider(),
+          _renderPrayerTimeRow('Isha'),
+        ],
+      ),
+    );
+  }
+
+  _renderPrayerTimeRow(String prayerType) {
+    Text prayerTypeText;
+    DateTime prayerTime;
+
+    if (prayerType.toLowerCase() == 'subuh') {
+      prayerTime = prayerTimeRenderList.first.subuh;
+    } else if (prayerType.toLowerCase() == 'terbit') {
+      prayerTime = prayerTimeRenderList.first.terbit;
+    } else if (prayerType.toLowerCase() == 'dhuhur') {
+      prayerTime = prayerTimeRenderList.first.dhuhur;
+    } else if (prayerType.toLowerCase() == 'ashar') {
+      prayerTime = prayerTimeRenderList.first.ashar;
+    } else if (prayerType.toLowerCase() == 'maghrib') {
+      prayerTime = prayerTimeRenderList.first.maghrib;
+    } else if (prayerType.toLowerCase() == 'isha') {
+      prayerTime = prayerTimeRenderList.first.isha;
+    }
+
+    prayerTypeText = Text(DateFormat('kk:mm').format(prayerTime));
+
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 5),
+            child: Text(
+              prayerType,
+            ),
+          ),
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 5),
+            child: prayerTypeText,
+          ),
+        ],
+      ),
+    );
+  }
+
+  _renderDivider() {
+    return Container(
+      height: 2,
+      child: Divider(
+        color: Colors.grey,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          RaisedButton(
-            onPressed: () async {
-              List<PrayerTime> listPrayerTime = await PrayerTimeDatabase.instance.readAll();
-              print(listPrayerTime.first.subuh);
-            },
-            child: Text("Prayer Times"),
-          ),
+          // RaisedButton(
+          //   onPressed: () async {
+          //     // List<PrayerTime> listPrayerTime = await PrayerTimeDatabase.instance.readAll();
+          //     print(prayerTimeRenderList.first.subuh);
+          //   },
+          //   child: Text("Prayer Times"),
+          // ),
+
+          prayerTimeRenderList.length > 0
+              ? _renderPrayerTimeCard()
+              : SpinKitCircle(
+                  color: Colors.green,
+                ),
         ],
       ),
     );
