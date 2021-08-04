@@ -59,7 +59,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       } else {
         //otherwise insert new one
         PrayerTime newPrayerTime = PrayerTime(
-          0,
+          null,
           DateTime.parse(response['date']),
           DateTime.parse(response['subuh']),
           DateTime.parse(response['terbit']),
@@ -84,6 +84,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: prayerTimeRenderList.length > 0
           ? Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _renderPrayerTimeRow('Subuh'),
                 _renderDivider(),
@@ -105,32 +106,35 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 
   _renderPrayerTimeRow(String prayerType) {
-    Text prayerTypeText;
-    DateTime prayerTime = DateTime.now();
+    Text prayerTimeText;
+    DateTime dateTimeRender;
+    PrayerTime prayerTimeRender = prayerTimeRenderList.firstWhere((element) =>
+        DateFormat('y-M-dd').format(element.date) ==
+        DateFormat('y-M-dd').format(_selectedDateTime));
 
     if (prayerType.toLowerCase() == 'subuh') {
-      prayerTime = prayerTimeRenderList.first.subuh;
+      dateTimeRender = prayerTimeRender.subuh;
     } else if (prayerType.toLowerCase() == 'terbit') {
-      prayerTime = prayerTimeRenderList.first.terbit;
+      dateTimeRender = prayerTimeRender.terbit;
     } else if (prayerType.toLowerCase() == 'dhuhur') {
-      prayerTime = prayerTimeRenderList.first.dhuhur;
+      dateTimeRender = prayerTimeRender.dhuhur;
     } else if (prayerType.toLowerCase() == 'ashar') {
-      prayerTime = prayerTimeRenderList.first.ashar;
+      dateTimeRender = prayerTimeRender.ashar;
     } else if (prayerType.toLowerCase() == 'maghrib') {
-      prayerTime = prayerTimeRenderList.first.maghrib;
+      dateTimeRender = prayerTimeRender.maghrib;
     } else if (prayerType.toLowerCase() == 'isha') {
-      prayerTime = prayerTimeRenderList.first.isha;
+      dateTimeRender = prayerTimeRender.isha;
     }
 
-    prayerTypeText = Text(
-      DateFormat('kk:mm').format(prayerTime),
+    prayerTimeText = Text(
+      DateFormat('kk:mm').format(dateTimeRender),
       style: TextStyle(
         fontSize: 18,
       ),
     );
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 27, horizontal: 10),
+      margin: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -143,7 +147,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
           ),
           Container(
             margin: EdgeInsets.symmetric(horizontal: 5),
-            child: prayerTypeText,
+            child: prayerTimeText,
           ),
         ],
       ),
