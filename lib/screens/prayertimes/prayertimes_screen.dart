@@ -12,6 +12,7 @@ class PrayerTimesScreen extends StatefulWidget {
 
 class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   List<PrayerTime> prayerTimeRenderList = [];
+  DateTime _selectedDateTime = DateTime.now();
 
   @override
   void initState() {
@@ -58,7 +59,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       } else {
         //otherwise insert new one
         PrayerTime newPrayerTime = PrayerTime(
-          null,
+          0,
           DateTime.parse(response['date']),
           DateTime.parse(response['subuh']),
           DateTime.parse(response['terbit']),
@@ -81,27 +82,31 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   _renderPrayerTimeCard() {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Column(
-        children: [
-          _renderPrayerTimeRow('Subuh'),
-          _renderDivider(),
-          _renderPrayerTimeRow('Terbit'),
-          _renderDivider(),
-          _renderPrayerTimeRow('Dhuhur'),
-          _renderDivider(),
-          _renderPrayerTimeRow('Ashar'),
-          _renderDivider(),
-          _renderPrayerTimeRow('Maghrib'),
-          _renderDivider(),
-          _renderPrayerTimeRow('Isha'),
-        ],
-      ),
+      child: prayerTimeRenderList.length > 0
+          ? Column(
+              children: [
+                _renderPrayerTimeRow('Subuh'),
+                _renderDivider(),
+                _renderPrayerTimeRow('Terbit'),
+                _renderDivider(),
+                _renderPrayerTimeRow('Dhuhur'),
+                _renderDivider(),
+                _renderPrayerTimeRow('Ashar'),
+                _renderDivider(),
+                _renderPrayerTimeRow('Maghrib'),
+                _renderDivider(),
+                _renderPrayerTimeRow('Isha'),
+              ],
+            )
+          : SpinKitCircle(
+              color: Colors.green,
+            ),
     );
   }
 
   _renderPrayerTimeRow(String prayerType) {
     Text prayerTypeText;
-    DateTime prayerTime;
+    DateTime prayerTime = DateTime.now();
 
     if (prayerType.toLowerCase() == 'subuh') {
       prayerTime = prayerTimeRenderList.first.subuh;
@@ -117,10 +122,15 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       prayerTime = prayerTimeRenderList.first.isha;
     }
 
-    prayerTypeText = Text(DateFormat('kk:mm').format(prayerTime));
+    prayerTypeText = Text(
+      DateFormat('kk:mm').format(prayerTime),
+      style: TextStyle(
+        fontSize: 18,
+      ),
+    );
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+      margin: EdgeInsets.symmetric(vertical: 27, horizontal: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -128,6 +138,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             margin: EdgeInsets.symmetric(horizontal: 5),
             child: Text(
               prayerType,
+              style: TextStyle(fontSize: 18),
             ),
           ),
           Container(
@@ -135,6 +146,48 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             child: prayerTypeText,
           ),
         ],
+      ),
+    );
+  }
+
+  _renderDateSelectorCard() {
+    return Card(
+      margin: EdgeInsets.fromLTRB(0, 20, 0, 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Container(
+        margin: EdgeInsets.symmetric(vertical: 5),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+                icon: Icon(Icons.chevron_left),
+                iconSize: 35,
+                onPressed: () {
+                  setState(() {
+                    _selectedDateTime = _selectedDateTime.add(
+                      Duration(days: -1),
+                    );
+                  });
+                }),
+            // Text('Tuesday, 3 Agustus 2021'),
+            Text(
+              DateFormat('EEEE, dd MMMM y').format(_selectedDateTime),
+            ),
+            IconButton(
+              icon: Icon(Icons.chevron_right),
+              iconSize: 35,
+              onPressed: () {
+                setState(() {
+                  _selectedDateTime = _selectedDateTime.add(
+                    Duration(days: 1),
+                  );
+                });
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -155,19 +208,14 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // RaisedButton(
-          //   onPressed: () async {
-          //     // List<PrayerTime> listPrayerTime = await PrayerTimeDatabase.instance.readAll();
-          //     print(prayerTimeRenderList.first.subuh);
-          //   },
-          //   child: Text("Prayer Times"),
-          // ),
-
-          prayerTimeRenderList.length > 0
-              ? _renderPrayerTimeCard()
-              : SpinKitCircle(
-                  color: Colors.green,
-                ),
+          Flexible(
+            flex: 4,
+            child: _renderPrayerTimeCard(),
+          ),
+          Flexible(
+            flex: 1,
+            child: _renderDateSelectorCard(),
+          ),
         ],
       ),
     );
