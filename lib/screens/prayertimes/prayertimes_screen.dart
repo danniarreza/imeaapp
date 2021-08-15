@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:imeaapp/model/prayertime.dart';
 import 'package:imeaapp/services/prayertime_database.dart';
@@ -14,12 +15,57 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   List<PrayerTime> prayerTimeRenderList = [];
   DateTime _selectedDateTime = DateTime.now();
 
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
 
+    var androidInitialize = new AndroidInitializationSettings('ic_launcher');
+    var iOSinitialize = new IOSInitializationSettings();
+    var initializationsSettings = new InitializationSettings(
+        android: androidInitialize, iOS: iOSinitialize);
+
+    flutterLocalNotificationsPlugin = new FlutterLocalNotificationsPlugin();
+    flutterLocalNotificationsPlugin.initialize(initializationsSettings,
+        onSelectNotification: notificationSelected);
+
     _readAllPrayerTime();
+  }
+
+  Future notificationSelected(String payload) async {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            content: Text("Notification Clicked ${payload}"),
+          );
+        });
+  }
+
+  _showNotification() async {
+    var androidDetails = new AndroidNotificationDetails(
+        "Channel ID", "name", "This is my channel",
+        importance: Importance.max);
+    var iOSDetails = new IOSNotificationDetails();
+    var generalNotificationDetails =
+        new NotificationDetails(android: androidDetails, iOS: iOSDetails);
+
+    // await flutterLocalNotificationsPlugin.show(
+    //   0,
+    //   "Task",
+    //   "You created a Task",
+    //   generalNotificationDetails,
+    //   payload: "Task",
+    // );
+
+    var scheduledTime = _selectedDateTime;
+    PrayerTime prayerTime = prayerTimeRenderList.firstWhere((element) =>
+        DateFormat('y-M-dd').format(element.date) ==
+        DateFormat('y-M-dd').format(_selectedDateTime));
+    flutterLocalNotificationsPlugin.schedule(0, "Task",
+        "Scheduled Notification", prayerTime.isha, generalNotificationDetails);
   }
 
   _readAllPrayerTime() async {
@@ -38,7 +84,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     });
 
     //evaluate which prayer time to insert or update
-    responseJson.forEach((response) {
+    responseJson.forEach((response) async {
       if (listPrayerDate.contains(DateTime.parse(response['date']))) {
         //if prayerdate existed in sqflite, then update
 
@@ -68,15 +114,52 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
           DateTime.parse(response['maghrib']),
           DateTime.parse(response['isha']),
         );
-        PrayerTimeDatabase.instance.create(newPrayerTime);
+        newPrayerTime = await PrayerTimeDatabase.instance.create(newPrayerTime);
         prayerTimeTempList.add(newPrayerTime);
       }
     });
+
+    _setPrayerTimeNotification(prayerTimeTempList.first);
 
     // setState for render
     setState(() {
       prayerTimeRenderList = [...prayerTimeTempList];
     });
+  }
+
+  _setPrayerTimeNotification(PrayerTime prayerTime) {
+    var androidDetails = new AndroidNotificationDetails(
+        "Channel ID", "name", "This is my channel",
+        importance: Importance.max);
+    var iOSDetails = new IOSNotificationDetails();
+    var generalNotificationDetails =
+        new NotificationDetails(android: androidDetails, iOS: iOSDetails);
+
+    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 1000, "Subuh",
+    //     "Time for Subuh", prayerTime.subuh, generalNotificationDetails);
+    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 2000, "Terbit",
+    //     "Time for Terbit", prayerTime.terbit, generalNotificationDetails);
+    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 3000, "Dhuhur",
+    //     "Time for Dhuhur", prayerTime.dhuhur, generalNotificationDetails);
+    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 4000, "Ashar",
+    //     "Time for Ashar", prayerTime.ashar, generalNotificationDetails);
+    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 5000, "Maghrib",
+    //     "Time for Maghrib", prayerTime.maghrib, generalNotificationDetails);
+    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 6000, "Isha",
+    //     "Time for Isha", prayerTime.isha, generalNotificationDetails);
+
+    flutterLocalNotificationsPlugin.schedule(prayerTime.id + 1000, "Subuh",
+        "Time for Subuh", DateTime.now().add(Duration(minutes: 1)), generalNotificationDetails);
+    flutterLocalNotificationsPlugin.schedule(prayerTime.id + 2000, "Terbit",
+        "Time for Terbit", DateTime.now().add(Duration(minutes: 2)), generalNotificationDetails);
+    flutterLocalNotificationsPlugin.schedule(prayerTime.id + 3000, "Dhuhur",
+        "Time for Dhuhur", DateTime.now().add(Duration(minutes: 3)), generalNotificationDetails);
+    flutterLocalNotificationsPlugin.schedule(prayerTime.id + 4000, "Ashar",
+        "Time for Ashar", DateTime.now().add(Duration(minutes: 4)), generalNotificationDetails);
+    flutterLocalNotificationsPlugin.schedule(prayerTime.id + 5000, "Maghrib",
+        "Time for Maghrib", DateTime.now().add(Duration(minutes: 5)), generalNotificationDetails);
+    flutterLocalNotificationsPlugin.schedule(prayerTime.id + 6000, "Isha",
+        "Time for Isha", DateTime.now().add(Duration(minutes: 6)), generalNotificationDetails);
   }
 
   _renderPrayerTimeCard() {
@@ -176,8 +259,13 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                   });
                 }),
             // Text('Tuesday, 3 Agustus 2021'),
-            Text(
-              DateFormat('EEEE, dd MMMM y').format(_selectedDateTime),
+            FlatButton(
+              onPressed: () {
+                _showNotification();
+              },
+              child: Text(
+                DateFormat('EEEE, dd MMMM y').format(_selectedDateTime),
+              ),
             ),
             IconButton(
               icon: Icon(Icons.chevron_right),
