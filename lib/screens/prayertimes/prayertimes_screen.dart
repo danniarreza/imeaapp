@@ -14,6 +14,7 @@ class PrayerTimesScreen extends StatefulWidget {
 class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   List<PrayerTime> prayerTimeRenderList = [];
   DateTime _selectedDateTime = DateTime.now();
+  bool prayerTimeRenderListReady = false;
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 
@@ -74,60 +75,94 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     List<PrayerTime> prayerTimeTempList = [];
     List<dynamic> responseJson = await getData(url);
 
-    //get prayer times from sqflite
-    List<PrayerTime> listPrayerTime =
-        await PrayerTimeDatabase.instance.readAll();
-    List<DateTime> listPrayerDate = [];
+    if (responseJson.length > 0) {
+      //get prayer times from sqflite
+      List<PrayerTime> listPrayerTime =
+          await PrayerTimeDatabase.instance.readAll();
+      List<DateTime> listPrayerDate =
+          listPrayerTime.map((e) => e.date).toList();
 
-    listPrayerTime.forEach((element) {
-      listPrayerDate.add(element.date);
-    });
+      //evaluate which prayer time to insert or update
 
-    //evaluate which prayer time to insert or update
-    responseJson.forEach((response) async {
-      if (listPrayerDate.contains(DateTime.parse(response['date']))) {
-        //if prayerdate existed in sqflite, then update
+      Future.forEach(responseJson, (response) async {
+        if (listPrayerDate.contains(DateTime.parse(response['date']))) {
+          //if prayerdate existed in sqflite, then update
 
-        PrayerTime updatePrayerTime = listPrayerTime.singleWhere((element) {
-          return element.date == DateTime.parse(response['date']);
+          PrayerTime updatePrayerTime = listPrayerTime.singleWhere((element) {
+            return element.date == DateTime.parse(response['date']);
+          });
+
+          if (DateFormat('H:m:s').format(DateTime.parse(response['subuh'])) !=
+              DateFormat('H:m:s').format(updatePrayerTime.subuh)) {
+            updatePrayerTime.subuh = DateTime.parse(response['subuh']);
+            _setPrayerTimeNotificationTime(updatePrayerTime, "Subuh");
+          }
+          if (DateFormat('H:m:s').format(DateTime.parse(response['terbit'])) !=
+              DateFormat('H:m:s').format(updatePrayerTime.terbit)) {
+            updatePrayerTime.terbit = DateTime.parse(response['terbit']);
+          }
+          if (DateFormat('H:m:s').format(DateTime.parse(response['dhuhur'])) !=
+              DateFormat('H:m:s').format(updatePrayerTime.dhuhur)) {
+            updatePrayerTime.dhuhur = DateTime.parse(response['dhuhur']);
+            _setPrayerTimeNotificationTime(updatePrayerTime, "Dhuhur");
+          }
+          if (DateFormat('H:m:s').format(DateTime.parse(response['ashar'])) !=
+              DateFormat('H:m:s').format(updatePrayerTime.ashar)) {
+            updatePrayerTime.ashar = DateTime.parse(response['ashar']);
+            _setPrayerTimeNotificationTime(updatePrayerTime, "Ashar");
+          }
+          if (DateFormat('H:m:s').format(DateTime.parse(response['maghrib'])) !=
+              DateFormat('H:m:s').format(updatePrayerTime.maghrib)) {
+            updatePrayerTime.maghrib = DateTime.parse(response['maghrib']);
+            _setPrayerTimeNotificationTime(updatePrayerTime, "Maghrib");
+          }
+          if (DateFormat('H:m:s').format(DateTime.parse(response['isha'])) !=
+              DateFormat('H:m:s').format(updatePrayerTime.isha)) {
+            updatePrayerTime.isha = DateTime.parse(response['isha']);
+            _setPrayerTimeNotificationTime(updatePrayerTime, "Isha");
+          }
+
+          PrayerTimeDatabase.instance.update(updatePrayerTime);
+          prayerTimeTempList.add(updatePrayerTime);
+        } else {
+          //otherwise insert new one
+          PrayerTime newPrayerTime = PrayerTime(
+            null,
+            DateTime.parse(response['date']),
+            DateTime.parse(response['subuh']),
+            DateTime.parse(response['terbit']),
+            DateTime.parse(response['dhuhur']),
+            DateTime.parse(response['ashar']),
+            DateTime.parse(response['maghrib']),
+            DateTime.parse(response['isha']),
+          );
+          newPrayerTime =
+              await PrayerTimeDatabase.instance.create(newPrayerTime);
+          prayerTimeTempList.add(newPrayerTime);
+          _setPrayerTimeNotificationDay(newPrayerTime);
+        }
+      }).then((value) {
+        // setState for render and adzan notification
+        setState(() {
+          prayerTimeRenderList = [...prayerTimeTempList];
+          prayerTimeRenderListReady = true;
+          // _setPrayerTimeNotificationBulk(prayerTimeTempList);
         });
+      });
+    } else {
+      //get prayer times from sqflite
+      List<PrayerTime> listPrayerTime =
+          await PrayerTimeDatabase.instance.readAll();
 
-        updatePrayerTime.subuh = DateTime.parse(response['subuh']);
-        updatePrayerTime.terbit = DateTime.parse(response['terbit']);
-        updatePrayerTime.dhuhur = DateTime.parse(response['dhuhur']);
-        updatePrayerTime.ashar = DateTime.parse(response['ashar']);
-        updatePrayerTime.maghrib = DateTime.parse(response['maghrib']);
-        updatePrayerTime.isha = DateTime.parse(response['isha']);
-
-        PrayerTimeDatabase.instance.update(updatePrayerTime);
-
-        prayerTimeTempList.add(updatePrayerTime);
-      } else {
-        //otherwise insert new one
-        PrayerTime newPrayerTime = PrayerTime(
-          null,
-          DateTime.parse(response['date']),
-          DateTime.parse(response['subuh']),
-          DateTime.parse(response['terbit']),
-          DateTime.parse(response['dhuhur']),
-          DateTime.parse(response['ashar']),
-          DateTime.parse(response['maghrib']),
-          DateTime.parse(response['isha']),
-        );
-        newPrayerTime = await PrayerTimeDatabase.instance.create(newPrayerTime);
-        prayerTimeTempList.add(newPrayerTime);
-      }
-    });
-
-    _setPrayerTimeNotification(prayerTimeTempList.first);
-
-    // setState for render
-    setState(() {
-      prayerTimeRenderList = [...prayerTimeTempList];
-    });
+      setState(() {
+        prayerTimeRenderList = [...listPrayerTime];
+        prayerTimeRenderListReady = true;
+        // _setPrayerTimeNotificationBulk(prayerTimeTempList);
+      });
+    }
   }
 
-  _setPrayerTimeNotification(PrayerTime prayerTime) {
+  _setPrayerTimeNotificationBulk(List<PrayerTime> prayerTimes) {
     var androidDetails = new AndroidNotificationDetails(
         "Channel ID", "name", "This is my channel",
         importance: Importance.max);
@@ -135,53 +170,221 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     var generalNotificationDetails =
         new NotificationDetails(android: androidDetails, iOS: iOSDetails);
 
-    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 1000, "Subuh",
-    //     "Time for Subuh", prayerTime.subuh, generalNotificationDetails);
-    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 2000, "Terbit",
-    //     "Time for Terbit", prayerTime.terbit, generalNotificationDetails);
-    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 3000, "Dhuhur",
-    //     "Time for Dhuhur", prayerTime.dhuhur, generalNotificationDetails);
-    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 4000, "Ashar",
-    //     "Time for Ashar", prayerTime.ashar, generalNotificationDetails);
-    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 5000, "Maghrib",
-    //     "Time for Maghrib", prayerTime.maghrib, generalNotificationDetails);
-    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 6000, "Isha",
-    //     "Time for Isha", prayerTime.isha, generalNotificationDetails);
+    prayerTimes.forEach((prayerTime) {
+      if (DateFormat('y-M-dd').format(prayerTime.date) ==
+              DateFormat('y-M-dd').format(DateTime.now()) ||
+          prayerTime.date.isAfter(DateTime.now())) {
+        print(prayerTime.date.toIso8601String() +
+            " is after " +
+            DateTime.now().toIso8601String());
 
-    flutterLocalNotificationsPlugin.schedule(prayerTime.id + 1000, "Subuh",
-        "Time for Subuh", DateTime.now().add(Duration(minutes: 1)), generalNotificationDetails);
-    flutterLocalNotificationsPlugin.schedule(prayerTime.id + 2000, "Terbit",
-        "Time for Terbit", DateTime.now().add(Duration(minutes: 2)), generalNotificationDetails);
-    flutterLocalNotificationsPlugin.schedule(prayerTime.id + 3000, "Dhuhur",
-        "Time for Dhuhur", DateTime.now().add(Duration(minutes: 3)), generalNotificationDetails);
-    flutterLocalNotificationsPlugin.schedule(prayerTime.id + 4000, "Ashar",
-        "Time for Ashar", DateTime.now().add(Duration(minutes: 4)), generalNotificationDetails);
-    flutterLocalNotificationsPlugin.schedule(prayerTime.id + 5000, "Maghrib",
-        "Time for Maghrib", DateTime.now().add(Duration(minutes: 5)), generalNotificationDetails);
-    flutterLocalNotificationsPlugin.schedule(prayerTime.id + 6000, "Isha",
-        "Time for Isha", DateTime.now().add(Duration(minutes: 6)), generalNotificationDetails);
+        if (prayerTime.subuh.isAfter(DateTime.now())) {
+          flutterLocalNotificationsPlugin.schedule(
+              prayerTime.id + 1000,
+              "Subuh",
+              "Time for Subuh at " + prayerTime.subuh.toIso8601String(),
+              prayerTime.subuh,
+              generalNotificationDetails);
+        }
+        if (prayerTime.dhuhur.isAfter(DateTime.now())) {
+          flutterLocalNotificationsPlugin.schedule(
+              prayerTime.id + 3000,
+              "Dhuhur",
+              "Time for Dhuhur" + prayerTime.dhuhur.toIso8601String(),
+              prayerTime.dhuhur,
+              generalNotificationDetails);
+        }
+        if (prayerTime.ashar.isAfter(DateTime.now())) {
+          flutterLocalNotificationsPlugin.schedule(
+              prayerTime.id + 4000,
+              "Ashar",
+              "Time for Ashar" + prayerTime.ashar.toIso8601String(),
+              prayerTime.ashar,
+              generalNotificationDetails);
+        }
+        if (prayerTime.maghrib.isAfter(DateTime.now())) {
+          flutterLocalNotificationsPlugin.schedule(
+              prayerTime.id + 5000,
+              "Maghrib",
+              "Time for Maghrib" + prayerTime.maghrib.toIso8601String(),
+              prayerTime.maghrib,
+              generalNotificationDetails);
+        }
+        if (prayerTime.isha.isAfter(DateTime.now())) {
+          flutterLocalNotificationsPlugin.schedule(
+              prayerTime.id + 6000,
+              "Isha",
+              "Time for Isha" + prayerTime.isha.toIso8601String(),
+              prayerTime.isha,
+              generalNotificationDetails);
+        }
+
+        // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 2000, "Terbit",
+        //     "Time for Terbit" + prayerTime.terbit.toIso8601String(), prayerTime.terbit, generalNotificationDetails);
+      }
+    });
+  }
+
+  _setPrayerTimeNotificationDay(PrayerTime prayerTime) {
+    var androidDetails = new AndroidNotificationDetails(
+        "Channel ID", "name", "This is my channel",
+        importance: Importance.max);
+    var iOSDetails = new IOSNotificationDetails();
+    var generalNotificationDetails =
+        new NotificationDetails(android: androidDetails, iOS: iOSDetails);
+
+    if (DateFormat('y-M-dd').format(prayerTime.date) ==
+            DateFormat('y-M-dd').format(DateTime.now()) ||
+        prayerTime.date.isAfter(DateTime.now())) {
+      if (prayerTime.subuh.isAfter(DateTime.now())) {
+        flutterLocalNotificationsPlugin.schedule(
+            prayerTime.id + 1000,
+            "Subuh",
+            "Time for Subuh at " + prayerTime.subuh.toIso8601String(),
+            prayerTime.subuh,
+            generalNotificationDetails);
+      }
+      if (prayerTime.dhuhur.isAfter(DateTime.now())) {
+        flutterLocalNotificationsPlugin.schedule(
+            prayerTime.id + 3000,
+            "Dhuhur",
+            "Time for Dhuhur" + prayerTime.dhuhur.toIso8601String(),
+            prayerTime.dhuhur,
+            generalNotificationDetails);
+      }
+      if (prayerTime.ashar.isAfter(DateTime.now())) {
+        flutterLocalNotificationsPlugin.schedule(
+            prayerTime.id + 4000,
+            "Ashar",
+            "Time for Ashar" + prayerTime.ashar.toIso8601String(),
+            prayerTime.ashar,
+            generalNotificationDetails);
+      }
+      if (prayerTime.maghrib.isAfter(DateTime.now())) {
+        flutterLocalNotificationsPlugin.schedule(
+            prayerTime.id + 5000,
+            "Maghrib",
+            "Time for Maghrib" + prayerTime.maghrib.toIso8601String(),
+            prayerTime.maghrib,
+            generalNotificationDetails);
+      }
+      if (prayerTime.isha.isAfter(DateTime.now())) {
+        flutterLocalNotificationsPlugin.schedule(
+            prayerTime.id + 6000,
+            "Isha",
+            "Time for Isha" + prayerTime.isha.toIso8601String(),
+            prayerTime.isha,
+            generalNotificationDetails);
+      }
+
+      // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 2000, "Terbit",
+      //     "Time for Terbit" + prayerTime.terbit.toIso8601String(), prayerTime.terbit, generalNotificationDetails);
+    }
+
+    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 1000, "Subuh",
+    //     "Time for Subuh", DateTime.now().add(Duration(seconds: 30)), generalNotificationDetails);
+    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 2000, "Terbit",
+    //     "Time for Terbit", DateTime.now().add(Duration(seconds: 30)), generalNotificationDetails);
+    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 3000, "Dhuhur",
+    //     "Time for Dhuhur", DateTime.now().add(Duration(seconds: 30)), generalNotificationDetails);
+    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 4000, "Ashar",
+    //     "Time for Ashar", DateTime.now().add(Duration(seconds: 30)), generalNotificationDetails);
+    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 5000, "Maghrib",
+    //     "Time for Maghrib", DateTime.now().add(Duration(seconds: 30)), generalNotificationDetails);
+    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 6000, "Isha",
+    //     "Time for Isha", DateTime.now().add(Duration(seconds: 30)), generalNotificationDetails);
+
+    // for(int i = 0; i<365; i++){
+    //   flutterLocalNotificationsPlugin.schedule(prayerTime.id + i, "Subuh",
+    //       "Time for Subuh", DateTime.now().add(Duration(seconds: 10 * (i+1))), generalNotificationDetails);
+    // }
+  }
+
+  _setPrayerTimeNotificationTime(PrayerTime prayerTime, String prayerType) {
+    var androidDetails = new AndroidNotificationDetails(
+        "Channel ID", "name", "This is my channel",
+        importance: Importance.max);
+    var iOSDetails = new IOSNotificationDetails();
+    var generalNotificationDetails =
+        new NotificationDetails(android: androidDetails, iOS: iOSDetails);
+
+    int plusId;
+
+    if (prayerType == "Subuh") {
+      flutterLocalNotificationsPlugin.schedule(
+          prayerTime.id + 1000,
+          prayerType,
+          "Time for " +
+              prayerType +
+              " at " +
+              prayerTime.subuh.toIso8601String(),
+          prayerTime.subuh,
+          generalNotificationDetails);
+    } else if (prayerType == "Dhuhur") {
+      flutterLocalNotificationsPlugin.schedule(
+          prayerTime.id + 3000,
+          prayerType,
+          "Time for " +
+              prayerType +
+              " at " +
+              prayerTime.dhuhur.toIso8601String(),
+          prayerTime.dhuhur,
+          generalNotificationDetails);
+    } else if (prayerType == "Ashar") {
+      flutterLocalNotificationsPlugin.schedule(
+          prayerTime.id + 4000,
+          prayerType,
+          "Time for " +
+              prayerType +
+              " at " +
+              prayerTime.ashar.toIso8601String(),
+          prayerTime.ashar,
+          generalNotificationDetails);
+    } else if (prayerType == "Maghrib") {
+      flutterLocalNotificationsPlugin.schedule(
+          prayerTime.id + 5000,
+          prayerType,
+          "Time for " +
+              prayerType +
+              " at " +
+              prayerTime.maghrib.toIso8601String(),
+          prayerTime.maghrib,
+          generalNotificationDetails);
+    } else if (prayerType == "Isha") {
+      flutterLocalNotificationsPlugin.schedule(
+          prayerTime.id + 6000,
+          prayerType,
+          "Time for " + prayerType + " at " + prayerTime.isha.toIso8601String(),
+          prayerTime.isha,
+          generalNotificationDetails);
+    }
   }
 
   _renderPrayerTimeCard() {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: prayerTimeRenderList.length > 0
-          ? Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _renderPrayerTimeRow('Subuh'),
-                _renderDivider(),
-                _renderPrayerTimeRow('Terbit'),
-                _renderDivider(),
-                _renderPrayerTimeRow('Dhuhur'),
-                _renderDivider(),
-                _renderPrayerTimeRow('Ashar'),
-                _renderDivider(),
-                _renderPrayerTimeRow('Maghrib'),
-                _renderDivider(),
-                _renderPrayerTimeRow('Isha'),
-              ],
-            )
+      child: prayerTimeRenderListReady == true
+          ? prayerTimeRenderList.length > 0
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _renderPrayerTimeRow('Subuh'),
+                    _renderDivider(),
+                    _renderPrayerTimeRow('Terbit'),
+                    _renderDivider(),
+                    _renderPrayerTimeRow('Dhuhur'),
+                    _renderDivider(),
+                    _renderPrayerTimeRow('Ashar'),
+                    _renderDivider(),
+                    _renderPrayerTimeRow('Maghrib'),
+                    _renderDivider(),
+                    _renderPrayerTimeRow('Isha'),
+                  ],
+                )
+              : Center(
+                  child: Text(
+                      "No Prayer Times found, please contact administrator."),
+                )
           : SpinKitCircle(
               color: Colors.green,
             ),
@@ -260,8 +463,14 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 }),
             // Text('Tuesday, 3 Agustus 2021'),
             FlatButton(
-              onPressed: () {
-                _showNotification();
+              onPressed: () async {
+                // _showNotification();
+                List<PendingNotificationRequest> p =
+                    await flutterLocalNotificationsPlugin
+                        .pendingNotificationRequests();
+                p.forEach((element) {
+                  print(element.body);
+                });
               },
               child: Text(
                 DateFormat('EEEE, dd MMMM y').format(_selectedDateTime),

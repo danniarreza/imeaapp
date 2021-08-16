@@ -95,6 +95,12 @@ class PrayerTimeDatabase {
     }).toList();
   }
 
+  Future<int> count() async{
+    final db = await instance.database;
+    final result = await db.rawQuery("SELECT COUNT(*) FROM "+ tablePrayerTime);
+    return Sqflite.firstIntValue(result);
+  }
+
   Future<int> update(PrayerTime prayerTime) async {
     final db = await instance.database;
 

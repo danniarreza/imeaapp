@@ -3,6 +3,7 @@ import 'dart:convert';
 
 Future getData(String url) async {
   String completeUrl = "https://imeaapp-sandbox.mxapps.io/api"+url;
+  // String completeUrl = "https://www.google.com/"+url;
 
   try{
     Response response = await get(completeUrl);
@@ -11,7 +12,9 @@ Future getData(String url) async {
     return responseJson;
   } catch (error){
     print(error);
-    return error;
+
+    List<dynamic> emptyResponseJson = [];
+    return emptyResponseJson;
   }
 }
 
