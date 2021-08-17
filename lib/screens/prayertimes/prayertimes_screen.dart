@@ -5,6 +5,9 @@ import 'package:imeaapp/model/prayertime.dart';
 import 'package:imeaapp/services/prayertime_database.dart';
 import 'package:imeaapp/services/rest_api.dart';
 import 'package:intl/intl.dart';
+import 'package:hijri/digits_converter.dart';
+import 'package:hijri/hijri_array.dart';
+import 'package:hijri/hijri_calendar.dart';
 
 class PrayerTimesScreen extends StatefulWidget {
   @override
@@ -48,25 +51,18 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   _showNotification() async {
     var androidDetails = new AndroidNotificationDetails(
         "Channel ID", "name", "This is my channel",
-        importance: Importance.max);
+        importance: Importance.max, icon: 'ic_launcher');
     var iOSDetails = new IOSNotificationDetails();
     var generalNotificationDetails =
         new NotificationDetails(android: androidDetails, iOS: iOSDetails);
 
-    // await flutterLocalNotificationsPlugin.show(
-    //   0,
-    //   "Task",
-    //   "You created a Task",
-    //   generalNotificationDetails,
-    //   payload: "Task",
-    // );
-
-    var scheduledTime = _selectedDateTime;
-    PrayerTime prayerTime = prayerTimeRenderList.firstWhere((element) =>
-        DateFormat('y-M-dd').format(element.date) ==
-        DateFormat('y-M-dd').format(_selectedDateTime));
-    flutterLocalNotificationsPlugin.schedule(0, "Task",
-        "Scheduled Notification", prayerTime.isha, generalNotificationDetails);
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      "Task",
+      "You created a Task",
+      generalNotificationDetails,
+      payload: "Task",
+    );
   }
 
   _readAllPrayerTime() async {
@@ -165,7 +161,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   _setPrayerTimeNotificationBulk(List<PrayerTime> prayerTimes) {
     var androidDetails = new AndroidNotificationDetails(
         "Channel ID", "name", "This is my channel",
-        importance: Importance.max);
+        importance: Importance.max, icon: 'ic_launcher');
     var iOSDetails = new IOSNotificationDetails();
     var generalNotificationDetails =
         new NotificationDetails(android: androidDetails, iOS: iOSDetails);
@@ -179,48 +175,25 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             DateTime.now().toIso8601String());
 
         if (prayerTime.subuh.isAfter(DateTime.now())) {
-          flutterLocalNotificationsPlugin.schedule(
-              prayerTime.id + 1000,
-              "Subuh",
-              "Time for Subuh at " + prayerTime.subuh.toIso8601String(),
-              prayerTime.subuh,
-              generalNotificationDetails);
+          _schedulePrayerTimeNotification(
+              generalNotificationDetails, prayerTime, "Subuh");
         }
         if (prayerTime.dhuhur.isAfter(DateTime.now())) {
-          flutterLocalNotificationsPlugin.schedule(
-              prayerTime.id + 3000,
-              "Dhuhur",
-              "Time for Dhuhur" + prayerTime.dhuhur.toIso8601String(),
-              prayerTime.dhuhur,
-              generalNotificationDetails);
+          _schedulePrayerTimeNotification(
+              generalNotificationDetails, prayerTime, "Dhuhur");
         }
         if (prayerTime.ashar.isAfter(DateTime.now())) {
-          flutterLocalNotificationsPlugin.schedule(
-              prayerTime.id + 4000,
-              "Ashar",
-              "Time for Ashar" + prayerTime.ashar.toIso8601String(),
-              prayerTime.ashar,
-              generalNotificationDetails);
+          _schedulePrayerTimeNotification(
+              generalNotificationDetails, prayerTime, "Ashar");
         }
         if (prayerTime.maghrib.isAfter(DateTime.now())) {
-          flutterLocalNotificationsPlugin.schedule(
-              prayerTime.id + 5000,
-              "Maghrib",
-              "Time for Maghrib" + prayerTime.maghrib.toIso8601String(),
-              prayerTime.maghrib,
-              generalNotificationDetails);
+          _schedulePrayerTimeNotification(
+              generalNotificationDetails, prayerTime, "Maghrib");
         }
         if (prayerTime.isha.isAfter(DateTime.now())) {
-          flutterLocalNotificationsPlugin.schedule(
-              prayerTime.id + 6000,
-              "Isha",
-              "Time for Isha" + prayerTime.isha.toIso8601String(),
-              prayerTime.isha,
-              generalNotificationDetails);
+          _schedulePrayerTimeNotification(
+              generalNotificationDetails, prayerTime, "Isha");
         }
-
-        // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 2000, "Terbit",
-        //     "Time for Terbit" + prayerTime.terbit.toIso8601String(), prayerTime.terbit, generalNotificationDetails);
       }
     });
   }
@@ -228,7 +201,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   _setPrayerTimeNotificationDay(PrayerTime prayerTime) {
     var androidDetails = new AndroidNotificationDetails(
         "Channel ID", "name", "This is my channel",
-        importance: Importance.max);
+        importance: Importance.max, icon: 'ic_launcher');
     var iOSDetails = new IOSNotificationDetails();
     var generalNotificationDetails =
         new NotificationDetails(android: androidDetails, iOS: iOSDetails);
@@ -237,127 +210,53 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             DateFormat('y-M-dd').format(DateTime.now()) ||
         prayerTime.date.isAfter(DateTime.now())) {
       if (prayerTime.subuh.isAfter(DateTime.now())) {
-        flutterLocalNotificationsPlugin.schedule(
-            prayerTime.id + 1000,
-            "Subuh",
-            "Time for Subuh at " + prayerTime.subuh.toIso8601String(),
-            prayerTime.subuh,
-            generalNotificationDetails);
+        _schedulePrayerTimeNotification(
+            generalNotificationDetails, prayerTime, "Subuh");
       }
       if (prayerTime.dhuhur.isAfter(DateTime.now())) {
-        flutterLocalNotificationsPlugin.schedule(
-            prayerTime.id + 3000,
-            "Dhuhur",
-            "Time for Dhuhur" + prayerTime.dhuhur.toIso8601String(),
-            prayerTime.dhuhur,
-            generalNotificationDetails);
+        _schedulePrayerTimeNotification(
+            generalNotificationDetails, prayerTime, "Dhuhur");
       }
       if (prayerTime.ashar.isAfter(DateTime.now())) {
-        flutterLocalNotificationsPlugin.schedule(
-            prayerTime.id + 4000,
-            "Ashar",
-            "Time for Ashar" + prayerTime.ashar.toIso8601String(),
-            prayerTime.ashar,
-            generalNotificationDetails);
+        _schedulePrayerTimeNotification(
+            generalNotificationDetails, prayerTime, "Ashar");
       }
       if (prayerTime.maghrib.isAfter(DateTime.now())) {
-        flutterLocalNotificationsPlugin.schedule(
-            prayerTime.id + 5000,
-            "Maghrib",
-            "Time for Maghrib" + prayerTime.maghrib.toIso8601String(),
-            prayerTime.maghrib,
-            generalNotificationDetails);
+        _schedulePrayerTimeNotification(
+            generalNotificationDetails, prayerTime, "Maghrib");
       }
       if (prayerTime.isha.isAfter(DateTime.now())) {
-        flutterLocalNotificationsPlugin.schedule(
-            prayerTime.id + 6000,
-            "Isha",
-            "Time for Isha" + prayerTime.isha.toIso8601String(),
-            prayerTime.isha,
-            generalNotificationDetails);
+        _schedulePrayerTimeNotification(
+            generalNotificationDetails, prayerTime, "Isha");
       }
-
-      // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 2000, "Terbit",
-      //     "Time for Terbit" + prayerTime.terbit.toIso8601String(), prayerTime.terbit, generalNotificationDetails);
     }
-
-    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 1000, "Subuh",
-    //     "Time for Subuh", DateTime.now().add(Duration(seconds: 30)), generalNotificationDetails);
-    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 2000, "Terbit",
-    //     "Time for Terbit", DateTime.now().add(Duration(seconds: 30)), generalNotificationDetails);
-    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 3000, "Dhuhur",
-    //     "Time for Dhuhur", DateTime.now().add(Duration(seconds: 30)), generalNotificationDetails);
-    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 4000, "Ashar",
-    //     "Time for Ashar", DateTime.now().add(Duration(seconds: 30)), generalNotificationDetails);
-    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 5000, "Maghrib",
-    //     "Time for Maghrib", DateTime.now().add(Duration(seconds: 30)), generalNotificationDetails);
-    // flutterLocalNotificationsPlugin.schedule(prayerTime.id + 6000, "Isha",
-    //     "Time for Isha", DateTime.now().add(Duration(seconds: 30)), generalNotificationDetails);
-
-    // for(int i = 0; i<365; i++){
-    //   flutterLocalNotificationsPlugin.schedule(prayerTime.id + i, "Subuh",
-    //       "Time for Subuh", DateTime.now().add(Duration(seconds: 10 * (i+1))), generalNotificationDetails);
-    // }
   }
 
   _setPrayerTimeNotificationTime(PrayerTime prayerTime, String prayerType) {
     var androidDetails = new AndroidNotificationDetails(
         "Channel ID", "name", "This is my channel",
-        importance: Importance.max);
+        importance: Importance.max, icon: 'ic_launcher');
     var iOSDetails = new IOSNotificationDetails();
     var generalNotificationDetails =
         new NotificationDetails(android: androidDetails, iOS: iOSDetails);
 
-    int plusId;
+    _schedulePrayerTimeNotification(
+        generalNotificationDetails, prayerTime, prayerType);
+  }
 
-    if (prayerType == "Subuh") {
-      flutterLocalNotificationsPlugin.schedule(
-          prayerTime.id + 1000,
-          prayerType,
-          "Time for " +
-              prayerType +
-              " at " +
-              prayerTime.subuh.toIso8601String(),
-          prayerTime.subuh,
-          generalNotificationDetails);
-    } else if (prayerType == "Dhuhur") {
-      flutterLocalNotificationsPlugin.schedule(
-          prayerTime.id + 3000,
-          prayerType,
-          "Time for " +
-              prayerType +
-              " at " +
-              prayerTime.dhuhur.toIso8601String(),
-          prayerTime.dhuhur,
-          generalNotificationDetails);
-    } else if (prayerType == "Ashar") {
-      flutterLocalNotificationsPlugin.schedule(
-          prayerTime.id + 4000,
-          prayerType,
-          "Time for " +
-              prayerType +
-              " at " +
-              prayerTime.ashar.toIso8601String(),
-          prayerTime.ashar,
-          generalNotificationDetails);
-    } else if (prayerType == "Maghrib") {
-      flutterLocalNotificationsPlugin.schedule(
-          prayerTime.id + 5000,
-          prayerType,
-          "Time for " +
-              prayerType +
-              " at " +
-              prayerTime.maghrib.toIso8601String(),
-          prayerTime.maghrib,
-          generalNotificationDetails);
-    } else if (prayerType == "Isha") {
-      flutterLocalNotificationsPlugin.schedule(
-          prayerTime.id + 6000,
-          prayerType,
-          "Time for " + prayerType + " at " + prayerTime.isha.toIso8601String(),
-          prayerTime.isha,
-          generalNotificationDetails);
-    }
+  _schedulePrayerTimeNotification(
+      NotificationDetails generalNotificationDetails,
+      PrayerTime prayerTime,
+      String prayerType) {
+    flutterLocalNotificationsPlugin.schedule(
+        prayerTime.getPlusId(prayerType),
+        prayerType,
+        "Time for " +
+            prayerType +
+            " at " +
+            DateFormat('H:mm').format(prayerTime.getPrayerHour(prayerType)),
+        prayerTime.getPrayerHour(prayerType),
+        generalNotificationDetails);
   }
 
   _renderPrayerTimeCard() {
@@ -413,7 +312,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     }
 
     prayerTimeText = Text(
-      DateFormat('kk:mm').format(dateTimeRender),
+      DateFormat('H:mm').format(dateTimeRender),
       style: TextStyle(
         fontSize: 18,
       ),
@@ -442,7 +341,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
   _renderDateSelectorCard() {
     return Card(
-      margin: EdgeInsets.fromLTRB(0, 20, 0, 10),
+      margin: EdgeInsets.fromLTRB(0, 10, 0, 10),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ),
@@ -505,16 +404,66 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+      margin: EdgeInsets.symmetric(vertical: 0, horizontal: 10),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Flexible(
-            flex: 4,
+            flex: 2,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Container(
+                  child: Icon(
+                    Icons.calendar_today,
+                    color: Colors.white,
+                  ),
+                  margin: EdgeInsets.only(left: 5),
+                  padding: EdgeInsets.all(MediaQuery.of(context).size.width / 35),
+                  decoration: BoxDecoration(
+                      color: Colors.green, shape: BoxShape.circle),
+                ),
+                Container(
+                  margin: EdgeInsets.only(left: 10),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        child: Text(
+                          "Prayer Time",
+                          style: TextStyle(
+                              // fontSize: 18
+                            fontSize: MediaQuery.of(context).size.width / 20
+                          ),
+                        ),
+                        // color: Colors.blue,
+                      ),
+                      Container(
+                        child: Text(
+                          HijriCalendar.fromDate(_selectedDateTime)
+                              .toFormat("dd MMMM yyyy"),
+                          style: TextStyle(
+                              // fontSize: 14,
+                              fontSize: MediaQuery.of(context).size.width / 25
+                          ),
+                        ),
+                        // color: Colors.red,
+                        margin: EdgeInsets.symmetric(vertical: 5),
+                      ),
+
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Flexible(
+            flex: 12,
             child: _renderPrayerTimeCard(),
           ),
           Flexible(
-            flex: 1,
+            flex: 2,
             child: _renderDateSelectorCard(),
           ),
         ],

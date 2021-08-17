@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 final String tablePrayerTime = 'prayertime';
 
 class PrayerTimeFields {
@@ -45,6 +47,38 @@ class PrayerTime {
 
   set id(int value) {
     _id = value;
+  }
+
+  int getPlusId(String prayerType){
+    int plusId;
+    if (prayerType == "Subuh") {
+      plusId = _id + 1000;
+    } else if (prayerType == "Dhuhur") {
+      plusId = _id + 3000;
+    } else if (prayerType == "Ashar") {
+      plusId = _id + 4000;
+    } else if (prayerType == "Maghrib") {
+      plusId = _id + 5000;
+    } else if (prayerType == "Isha") {
+      plusId = _id + 6000;
+    }
+    return plusId;
+  }
+
+  DateTime getPrayerHour(String prayerType){
+    DateTime prayerHour;
+    if (prayerType == "Subuh") {
+      prayerHour = subuh;
+    } else if (prayerType == "Dhuhur") {
+      prayerHour = dhuhur;
+    } else if (prayerType == "Ashar") {
+      prayerHour = ashar;
+    } else if (prayerType == "Maghrib") {
+      prayerHour = maghrib;
+    } else if (prayerType == "Isha") {
+      prayerHour = isha;
+    }
+    return prayerHour;
   }
 
   DateTime get date => _date;
