@@ -51,7 +51,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   _showNotification() async {
     var androidDetails = new AndroidNotificationDetails(
         "Channel ID", "name", "This is my channel",
-        importance: Importance.max, icon: 'ic_launcher');
+        importance: Importance.max,
+        priority: Priority.max,
+        icon: 'ic_launcher');
     var iOSDetails = new IOSNotificationDetails();
     var generalNotificationDetails =
         new NotificationDetails(android: androidDetails, iOS: iOSDetails);
@@ -161,7 +163,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   _setPrayerTimeNotificationBulk(List<PrayerTime> prayerTimes) {
     var androidDetails = new AndroidNotificationDetails(
         "Channel ID", "name", "This is my channel",
-        importance: Importance.max, icon: 'ic_launcher');
+        importance: Importance.max,
+        priority: Priority.max,
+        icon: 'ic_launcher');
     var iOSDetails = new IOSNotificationDetails();
     var generalNotificationDetails =
         new NotificationDetails(android: androidDetails, iOS: iOSDetails);
@@ -201,7 +205,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   _setPrayerTimeNotificationDay(PrayerTime prayerTime) {
     var androidDetails = new AndroidNotificationDetails(
         "Channel ID", "name", "This is my channel",
-        importance: Importance.max, icon: 'ic_launcher');
+        importance: Importance.max,
+        priority: Priority.max,
+        icon: 'ic_launcher');
     var iOSDetails = new IOSNotificationDetails();
     var generalNotificationDetails =
         new NotificationDetails(android: androidDetails, iOS: iOSDetails);
@@ -235,7 +241,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   _setPrayerTimeNotificationTime(PrayerTime prayerTime, String prayerType) {
     var androidDetails = new AndroidNotificationDetails(
         "Channel ID", "name", "This is my channel",
-        importance: Importance.max, icon: 'ic_launcher');
+        importance: Importance.max,
+        priority: Priority.max,
+        icon: 'ic_launcher');
     var iOSDetails = new IOSNotificationDetails();
     var generalNotificationDetails =
         new NotificationDetails(android: androidDetails, iOS: iOSDetails);
@@ -419,7 +427,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                     color: Colors.white,
                   ),
                   margin: EdgeInsets.only(left: 5),
-                  padding: EdgeInsets.all(MediaQuery.of(context).size.width / 35),
+                  padding:
+                      EdgeInsets.all(MediaQuery.of(context).size.width / 35),
                   decoration: BoxDecoration(
                       color: Colors.green, shape: BoxShape.circle),
                 ),
@@ -434,8 +443,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                           "Prayer Time",
                           style: TextStyle(
                               // fontSize: 18
-                            fontSize: MediaQuery.of(context).size.width / 20
-                          ),
+                              fontSize: MediaQuery.of(context).size.width / 20),
                         ),
                         // color: Colors.blue,
                       ),
@@ -445,13 +453,11 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                               .toFormat("dd MMMM yyyy"),
                           style: TextStyle(
                               // fontSize: 14,
-                              fontSize: MediaQuery.of(context).size.width / 25
-                          ),
+                              fontSize: MediaQuery.of(context).size.width / 25),
                         ),
                         // color: Colors.red,
                         margin: EdgeInsets.symmetric(vertical: 5),
                       ),
-
                     ],
                   ),
                 ),
