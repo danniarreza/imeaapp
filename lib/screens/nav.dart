@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:imeaapp/screens/places/places_screen.dart';
 import 'package:imeaapp/screens/prayertimes/prayertimes_screen.dart';
 
 class Nav extends StatefulWidget {
@@ -13,7 +14,7 @@ class _NavState extends State<Nav> {
 
   List<Widget> _widgetOptions = <Widget>[
     PrayerTimesScreen(),
-    Text('Messages'),
+    PlacesScreen(),
     Text('Profile'),
   ];
 
