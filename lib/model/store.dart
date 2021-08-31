@@ -10,7 +10,7 @@ class Store {
   List<Sales> _salesList;
 
   Store(this._title, this._caption, this._latitude, this._longitude,
-      this._description, this._website);
+      this._description, this._website, this._salesList);
 
   List<Sales> get salesList => _salesList;
 
@@ -48,5 +48,10 @@ class Store {
 
   set description(String value) {
     _description = value;
+  }
+
+  @override
+  String toString() {
+    return 'Store{_title: $_title, _caption: $_caption, _latitude: $_latitude, _longitude: $_longitude, _description: $_description, _website: $_website, _salesList: $_salesList}';
   }
 }

@@ -63,6 +63,14 @@ class _PlacesScreenState extends State<PlacesScreen> {
     List<Store> newListStores = [];
 
     Future.forEach(responseJson, (element) {
+      List<Sales> newListSales = [];
+
+      Future.forEach(element["sales"], (row) {
+        Sales sales =
+            Sales(row["product"], row["unit"], row["price"], row["duration"]);
+        newListSales.add(sales);
+      });
+
       Store store = Store(
         element["title"],
         element["caption"],
@@ -70,15 +78,11 @@ class _PlacesScreenState extends State<PlacesScreen> {
         element["longitude"],
         element["description"],
         element["website"],
+        [...newListSales]
       );
 
-      Future.forEach(element["sales"], (row) {
-        Sales sales =
-            Sales(row["product"], row["unit"], row["price"], row["duration"]);
-        store.salesList.add(sales);
-      });
-
       newListStores.add(store);
+      print(store.toString());
     });
 
     setState(() {
@@ -99,7 +103,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
     mosqueMarker = BitmapDescriptor.fromBytes(mosqueMarkerIcon);
 
     final Uint8List storeMarkerIcon =
-    await getBytesFromAsset('assets/cart_marker.png', 100);
+        await getBytesFromAsset('assets/cart_marker.png', 100);
 
     storeMarker = BitmapDescriptor.fromBytes(storeMarkerIcon);
   }

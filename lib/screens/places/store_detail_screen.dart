@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:imeaapp/model/sales.dart';
 import 'package:imeaapp/model/store.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -13,7 +14,6 @@ class StoreDetailScreen extends StatefulWidget {
 }
 
 class _StoreDetailScreenState extends State<StoreDetailScreen> {
-
   _renderDescriptionContainer() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,7 +66,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 ),
               ),
               Container(
-                margin: EdgeInsets.fromLTRB(15, 0, 15, 25),
+                margin: EdgeInsets.fromLTRB(15, 0, 15, 10),
                 child: InkWell(
                   child: new Text(
                     widget._store.website,
@@ -85,6 +85,65 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
           );
   }
 
+  _renderSalesContainer() {
+    List<Widget> salesListRender = [];
+    widget._store.salesList.forEach((sales) {
+      salesListRender.add(
+        Container(
+          margin: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    sales.product + " " + sales.unit,
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    sales.price,
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
+                  )
+                ],
+              ),
+              Text(sales.duration)
+            ],
+          ),
+        ),
+      );
+    });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          margin: EdgeInsets.symmetric(
+            horizontal: 15,
+            vertical: 5,
+          ),
+          child: Text(
+            "Promo",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Container(
+          margin: EdgeInsets.fromLTRB(0, 0, 0, 15),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: salesListRender,
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,6 +170,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
             ),
             _renderDescriptionContainer(),
             _renderWebsiteContainer(),
+            _renderSalesContainer(),
           ],
         ),
       ),

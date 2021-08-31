@@ -29,4 +29,9 @@ class Sales{
   set unit(String value) {
     _unit = value;
   }
+
+  @override
+  String toString() {
+    return 'Sales{_product: $_product, _unit: $_unit, _price: $_price, _duration: $_duration}';
+  }
 }

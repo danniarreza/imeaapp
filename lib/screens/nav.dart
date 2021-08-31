@@ -42,8 +42,8 @@ class _NavState extends State<Nav> {
             title: Text("Prayers")
           ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.nightlight_round),
-              title: Text("Mosques")
+              icon: Icon(Icons.location_pin),
+              title: Text("Places")
           ),
           BottomNavigationBarItem(
               icon: Icon(Icons.question_answer),
